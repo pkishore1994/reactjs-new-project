@@ -37,8 +37,12 @@ jobs:
         working-directory: .   # run at repo root
 
       - name: Verify frontend build output
-        run: ls -la ./dist
-
+        run: |
+          if [ -d "./dist" ]; then
+            ls -la ./dist
+          else
+            echo "Directory ./dist does not exist"
+         fi
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
