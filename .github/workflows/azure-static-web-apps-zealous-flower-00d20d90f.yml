@@ -18,7 +18,8 @@ jobs:
       id-token: write
       contents: read
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
         with:
           submodules: true
           lfs: false
@@ -30,19 +31,21 @@ jobs:
 
       - name: Install frontend dependencies
         run: npm install
-        working-directory: .   # run at repo root
+        working-directory: .
 
       - name: Build frontend
         run: npm run build
-        working-directory: .   # run at repo root
+        working-directory: .
 
       - name: Verify frontend build output
         run: |
           if [ -d "./dist" ]; then
+            echo "Build folder exists:"
             ls -la ./dist
           else
-            echo "Directory ./dist does not exist"
-         fi
+            echo "Directory ./build does not exist"
+          fi
+
       - name: Deploy to Azure Static Web Apps
         uses: Azure/static-web-apps-deploy@v1
         with:
@@ -50,12 +53,19 @@ jobs:
           action: "upload"
           app_location: "."             # root folder
           api_location: ""              # no API
-          output_location: "dist"      # React build folder
-          github_id_token: ${{ steps.idtoken.outputs.result }}
+          output_location: "dist"      # React build folder (corrected)
+          # github_id_token is not needed unless you're using it for auth inside deploy action
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
+    name: Close Pull Request Job
+    steps:
+      - name: Close Pull Request
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          action: "close"
+
     name: Close Pull Request Job
     steps:
       - name: Close Pull Request
