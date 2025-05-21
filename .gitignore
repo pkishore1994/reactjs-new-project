@@ -1,0 +1,24 @@
+node_modules
+dist
+.env
+.idea
+storybook-static
+
+docs/src/.vitepress/dist
+docs/src/.vitepress/cache
+docs/src/.vitepress/.temp
+# pg早期的备份文件
+*.backup
+# 自动保存导致产生的文件
+app/src-tauri/Project Graph
+backup_projectGraphTips
+*.backup.json
+# 省略文件夹
+backup_*
+
+.turbo
+
+# mac下开发需要忽略
+.DS_Store
+
+.vscode/settings.json
