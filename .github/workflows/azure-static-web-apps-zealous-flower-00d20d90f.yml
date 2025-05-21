@@ -39,9 +39,9 @@ jobs:
 
       - name: Verify frontend build output
         run: |
-          if [ -d "./dist" ]; then
+          if [ -d "./build" ]; then
             echo "Build folder exists:"
-            ls -la ./dist
+            ls -la ./build
           else
             echo "Directory ./build does not exist"
           fi
@@ -53,19 +53,12 @@ jobs:
           action: "upload"
           app_location: "."             # root folder
           api_location: ""              # no API
-          output_location: "dist"      # React build folder (corrected)
+          output_location: "build"      # React build folder (corrected)
           # github_id_token is not needed unless you're using it for auth inside deploy action
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
-    name: Close Pull Request Job
-    steps:
-      - name: Close Pull Request
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          action: "close"
-
     name: Close Pull Request Job
     steps:
       - name: Close Pull Request
