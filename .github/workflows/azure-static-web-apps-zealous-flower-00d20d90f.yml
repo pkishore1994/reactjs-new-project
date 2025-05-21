@@ -46,7 +46,7 @@ jobs:
           action: "upload"
           app_location: "."             # root folder
           api_location: ""              # no API
-          output_location: "build"      # React build folder
+          output_location: "dist"      # React build folder
           github_id_token: ${{ steps.idtoken.outputs.result }}
 
   close_pull_request_job:
