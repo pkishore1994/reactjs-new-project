@@ -1,6 +1,6 @@
 {
   "name": "project-graph",
-  "version": "1.0.1",
+  "version": "1.0.4",
   "description": "An open-source project that aims to provide a next-generation node diagram tool for visual thinking.",
   "type": "module",
   "scripts": {
