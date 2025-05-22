@@ -1,71 +1,44 @@
-name: Azure Static Web Apps CI/CD
+name: Build and Publish to npm
 
 on:
   push:
     branches:
       - main
-  pull_request:
-    types: [opened, synchronize, reopened, closed]
-    branches:
-      - main
 
 jobs:
-  build_and_deploy_job:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+  build-and-publish:
     runs-on: ubuntu-latest
-    name: Build and Deploy Job
-    permissions:
-      id-token: write
-      contents: read
+    name: Build and Publish
 
     steps:
-      - name: Checkout code
+      - name: ⬇️ Checkout code
         uses: actions/checkout@v3
 
-      - name: Setup Node.js
+      - name: 🧰 Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
 
-      - name: Install pnpm
+      - name: 📦 Install pnpm
         run: npm install -g pnpm
 
-      - name: Install dependencies
+      - name: 📥 Install dependencies
         run: pnpm install
 
-      - name: Build frontend
+      - name: 🔧 Build the library
         run: pnpm run build
 
-      - name: Verify frontend build output
+      - name: ✅ Verify build output
         run: |
           if [ -f "./dist/index.js" ]; then
-            echo "✅ index.js folder exists:"
+            echo "✅ Build output exists:"
             ls -la ./dist
           else
-            echo "❌ Directory ./index.html does not exist"
+            echo "❌ dist/index.js not found"
             exit 1
           fi
 
-      - name: Publish to npm
+      - name: 🚀 Publish to npm
         run: pnpm publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Deploy to Azure Static Web Apps
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-          action: "upload"
-          app_location: "."             # Root of the project
-          output_location: "dist"       # Build output folder
-          skip_app_build: true          # Don't rebuild in Azure
-
-  close_pull_request_job:
-    if: github.event_name == 'pull_request' && github.event.action == 'closed'
-    runs-on: ubuntu-latest
-    name: Close Pull Request Job
-    steps:
-      - name: Close Pull Request
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          action: "close"
