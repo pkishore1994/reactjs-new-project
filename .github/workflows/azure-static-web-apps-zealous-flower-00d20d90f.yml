@@ -1,40 +1,115 @@
-name: Build and Publish to npm
+name: publish
 
 on:
-  push:
-    branches:
-      - main
+  workflow_call:
+    inputs:
+      app_version_android:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+      app_name:
+        required: true
+        type: string
+      app_id:
+        required: true
+        type: string
+      envs:
+        required: false
+        type: string
 
 jobs:
-  build-and-publish:
-    runs-on: ubuntu-latest
-    name: Build and Publish
+  publish-tauri:
+    name: Build & Publish Tauri App
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: "linux"
+            os: ubuntu-latest
+            target: "x86_64-unknown-linux-gnu"
+            arch: "amd64"
+            dist: "app/src-tauri/target/release/bundle/deb"
+          - platform: "windows"
+            os: windows-latest
+            target: "x86_64-pc-windows-msvc"
+            arch: "amd64"
+            dist: "app/src-tauri/target/release/bundle/nsis"
+          - platform: "macos"
+            os: macos-latest
+            target: "x86_64-apple-darwin"
+            arch: "amd64"
+            dist: "app/src-tauri/target/release/bundle/dmg"
+          - platform: "macos"
+            os: macos-latest
+            target: "aarch64-apple-darwin"
+            arch: "arm64"
+            dist: "app/src-tauri/target/release/bundle/dmg"
+
+    env:
+      TAURI_PLATFORM: ${{ matrix.platform }}
+      APP_VERSION_ANDROID: ${{ inputs.app_version_android }}
+      APP_VERSION: ${{ inputs.app_version_android }}
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
 
     steps:
-      - name: ⬇️ Checkout code
-        uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - name: 🧰 Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          node-version: '18'
+          node-version: 20
 
-      - name: 📦 Install pnpm
-        run: npm install -g pnpm
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+          cache: true
 
-      - name: 📥 Install dependencies
-        run: pnpm install
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
 
-      - name: 🔧 Build the library
-        run: pnpm run build
-
-      - name: ✅ Verify build output
-        run: ls -la ./dist || echo "dist folder not found"
-
-      - name: 🔐 Authenticate npm
-        run: npm config set //registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}
-
-      - name: 🚀 Publish to npm
-        run: pnpm publish --no-git-checks
+      - name: Set up Tauri dependencies
+        uses: tauri-apps/tauri-action@v0
+        with:
+          args: ""
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          TAURI_PLATFORM: ${{ matrix.platform }}
+
+      - name: Install JS dependencies
+        run: pnpm install
+        working-directory: app
+
+      - name: Inject build envs
+        if: inputs.envs != ''
+        run: |
+          echo "${{ inputs.envs }}" | while IFS='=' read -r key value; do
+            echo "$key=$value" >> $GITHUB_ENV
+          done
+
+      - name: Build Tauri app
+        run: pnpm run tauri:build
+        working-directory: app
+
+      - name: Rename and move artifacts
+        run: |
+          mkdir -p dist
+          FILENAME=$(ls ${{ matrix.dist }} | grep -E '\.(deb|exe|dmg)$' | head -n 1)
+          mv "${{ matrix.dist }}/$FILENAME" "dist/${{ inputs.app_name }}-${{ inputs.app_version_android }}-${{ matrix.platform }}-${{ matrix.arch }}.${FILENAME##*.}"
+        shell: bash
+
+      - name: Upload artifact to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
