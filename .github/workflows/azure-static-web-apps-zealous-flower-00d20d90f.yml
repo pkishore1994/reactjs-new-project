@@ -39,9 +39,9 @@ jobs:
 
       - name: Verify frontend build output
         run: |
-          if [ -d "./build" ]; then
+          if [ -d "./dist" ]; then
             echo "Build folder exists:"
-            ls -la ./build
+            ls -la ./dist
           else
             echo "Directory ./build does not exist"
           fi
@@ -53,7 +53,7 @@ jobs:
           action: "upload"
           app_location: "."             # root folder
           api_location: ""              # no API
-          output_location: "build"      # React build folder (corrected)
+          output_location: "dist"      # React build folder (corrected)
           skip_deploy_on_missing_secrets: true
           # github_id_token is not needed unless you're using it for auth inside deploy action
 
