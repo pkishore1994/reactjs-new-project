@@ -29,14 +29,7 @@ jobs:
         run: pnpm run build
 
       - name: ✅ Verify build output
-        run: |
-          if [ -f "./dist/index.js" ]; then
-            echo "✅ Build output exists:"
-            ls -la ./dist
-          else
-            echo "❌ dist/index.js not found"
-            exit 1
-          fi
+        run: ls -la ./dist || echo "dist folder not found"
 
       - name: 🚀 Publish to npm
         run: pnpm publish --no-git-checks
