@@ -1,0 +1,20 @@
+name: Continuous Deployment
+
+on:
+  push:
+    tags:
+      - "v*.*.*"  # triggers on version tags like v1.2.3
+
+jobs:
+  cd:
+    name: Trigger Publish Workflow
+    uses: ./.github/workflows/publish.yml
+    with:
+      app_version_android: ${{ github.ref_name }}
+      environment: "production"
+      app_name: "DBS"       # 🔁 Replace with your app's name
+      app_id: "com.aapmor.app"     # 🔁 Replace with your app's identifier
+      envs: |
+        VITE_API_URL=${{ secrets.VITE_API_URL }}
+        OTHER_ENV_KEY=${{ secrets.OTHER_ENV_KEY }}
+    secrets: inherit
