@@ -45,12 +45,6 @@ jobs:
           else
             echo "skip=false" >> $GITHUB_OUTPUT
 
-      - name: 🚀 Publish to npm
-        if: steps.check-version.outputs.skip != 'true'
-        run: pnpm publish --no-git-checks
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
       - name: 🚀 Deploy to Azure Static Web Apps (optional)
         uses: Azure/static-web-apps-deploy@v1
         with:
