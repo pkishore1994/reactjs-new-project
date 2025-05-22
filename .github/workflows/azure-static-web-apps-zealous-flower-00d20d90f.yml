@@ -54,6 +54,7 @@ jobs:
           app_location: "."             # root folder
           api_location: ""              # no API
           output_location: "build"      # React build folder (corrected)
+          skip_deploy_on_missing_secrets: true
           # github_id_token is not needed unless you're using it for auth inside deploy action
 
   close_pull_request_job:
