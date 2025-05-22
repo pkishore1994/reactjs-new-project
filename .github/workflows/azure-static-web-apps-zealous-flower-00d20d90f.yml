@@ -38,11 +38,11 @@ jobs:
 
       - name: Verify frontend build output
         run: |
-          if [ -d "./dist" ]; then
-            echo "✅ Build folder exists:"
+          if [ -d "./dist/index.html" ]; then
+            echo "✅ index.html folder exists:"
             ls -la ./dist
           else
-            echo "❌ Directory ./dist does not exist"
+            echo "❌ Directory ./index.html does not exist"
             exit 1
           fi
 
