@@ -31,6 +31,9 @@ jobs:
       - name: ✅ Verify build output
         run: ls -la ./dist || echo "dist folder not found"
 
+      - name: 🔐 Authenticate npm
+        run: npm config set //registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}
+
       - name: 🚀 Publish to npm
         run: pnpm publish --no-git-checks
         env:
