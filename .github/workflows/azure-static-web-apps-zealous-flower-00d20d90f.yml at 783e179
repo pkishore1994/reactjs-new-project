@@ -1,14 +1,30 @@
-name: Continuous Deployment
+name: Publish Workflow
 
 on:
-  push:
-    tags:
-      - "v*.*.*"  # Trigger on version tags like v1.2.3
+  workflow_call:
+    inputs:
+      app_version_android:
+        required: true
+        type: string
+      environment:
+        required: true
+        type: string
+      app_name:
+        required: true
+        type: string
+      app_id:
+        required: true
+        type: string
+      envs:
+        required: false
+        type: string
+    secrets:
+      NPM_TOKEN:
+        required: true
 
 jobs:
-  build-and-deploy:
+  build-and-publish:
     runs-on: ubuntu-latest
-    name: Build and Deploy
 
     steps:
       - name: ⬇️ Checkout repository
@@ -26,37 +42,33 @@ jobs:
       - name: 📥 Install dependencies
         run: pnpm install
 
-      - name: 🔧 Build project
+      - name: 🔧 Build the library
         run: pnpm run build
 
-      - name: ✅ Verify dist output
-        run: ls -la ./dist || echo "dist not found"
+      - name: ✅ Verify dist folder
+        run: ls -la ./dist || echo "dist folder not found"
 
-      - name: 🔐 Authenticate with npm
+      - name: 🔐 Set up npm auth
         run: npm config set //registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}
 
-      - name: 📦 Check if version already exists
+      - name: ⛔ Check if version already exists
         id: check-version
         run: |
           PKG_NAME=$(node -p "require('./package.json').name")
           PKG_VERSION=$(node -p "require('./package.json').version")
+          echo "📦 Checking $PKG_NAME@$PKG_VERSION"
           if npm view "$PKG_NAME@$PKG_VERSION" > /dev/null 2>&1; then
+            echo "Version $PKG_VERSION already exists. Skipping publish."
             echo "skip=true" >> $GITHUB_OUTPUT
           else
             echo "skip=false" >> $GITHUB_OUTPUT
+          fi
 
-      - name: 🚀 Deploy to Azure Static Web Apps (optional)
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          action: "upload"
-          app_location: "/"
-          output_location: "dist"
-          environment: "production"
+      - name: 🚀 Publish to npm
+        if: steps.check-version.outputs.skip != 'true'
+        run: pnpm publish --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-      - name: ℹ️ Log App Info
-        run: |
-          echo "App Name: YourAppName"
-          echo "App ID: com.example.app"
-          echo "Version: ${{ github.ref_name }}"
+      - name: ✅ Done
+        run: echo "Publish job completed for version ${{ inputs.app_version_android }}"
